@@ -1,28 +1,7 @@
 const { db, collections, admin } = require("../config/firebase");
 const { body, param, validationResult } = require("express-validator");
-const winston = require("winston");
+const logger = require("../utils/logger");
 const { sendEmailAndNotify } = require("../utils/email");
-
-// Configure Winston logger
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.File({ filename: "logs/error.log", level: "error" }),
-    new winston.transports.File({ filename: "logs/combined.log" }),
-  ],
-});
-
-if (process.env.NODE_ENV !== "production") {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.simple(),
-    })
-  );
-}
 
 // Helper function to validate Firebase document ID
 const isValidFirebaseId = (id) => {
