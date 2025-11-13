@@ -1,0 +1,56 @@
+# Copy this file to .env in the server directory
+# File: server/.env
+
+# Server Configuration
+PORT=10000
+NODE_ENV=development
+
+# JWT Secret (REQUIRED - change this to a random string)
+JWT_SECRET=your-super-secret-jwt-key-change-this-to-random-string
+
+# Firebase Configuration (REQUIRED)
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour key here\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your-project.iam.gserviceaccount.com
+
+# Cloudinary Configuration (REQUIRED - for file uploads)
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# CORS Configuration (OPTIONAL)
+# Comma-separated list of allowed frontend origins
+# If not set, uses smart defaults based on NODE_ENV
+
+# Development examples:
+# ALLOWED_ORIGINS=http://localhost:5173
+# ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# Production examples:
+# ALLOWED_ORIGINS=https://myapp.vercel.app
+# ALLOWED_ORIGINS=https://myapp.vercel.app,https://www.myapp.com
+
+# Local network (mobile testing):
+# ALLOWED_ORIGINS=http://localhost:5173,http://192.168.1.100:5173
+
+# Smart Defaults (if ALLOWED_ORIGINS not set):
+# - Development: localhost:5173 + local network IPs (192.168.x.x, 10.x.x.x)
+# - Production: Hardcoded production URLs
+
+# Attendance Location Configuration (OPTIONAL)
+ALLOWED_LNG=8.8362755
+ALLOWED_LAT=33.1245286
+ALLOWED_RADIUS=500
+
+# Email Configuration (OPTIONAL - for notifications)
+# Leave commented out if you don't want email notifications
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASS=your-app-password
+# SMTP_FROM=noreply@yourcompany.com
+
+# Logging Level (OPTIONAL)
+# Options: error, warn, info, debug
+LOG_LEVEL=info
+

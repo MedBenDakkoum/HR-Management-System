@@ -32,15 +32,58 @@ try {
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// Get allowed origins from environment or use defaults
+const getAllowedOrigins = () => {
+  if (process.env.ALLOWED_ORIGINS) {
+    // Parse comma-separated list from .env
+    return process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim());
+  }
+  
+  // Default origins
+  if (process.env.NODE_ENV === "production") {
+    return [
+      "https://smart-hrm-system.vercel.app",
+      "https://hrm-system-git-test-ec63dbf-mohamed-s-projects-62a99681.vercel.app",
+    ];
+  }
+  
+  // Development - allow localhost on any port + local network IPs
+  return [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:\d+$/,  // Local network IPs
+    /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$/,  // Local network IPs
+  ];
+};
+
+const allowedOrigins = getAllowedOrigins();
+
+console.log("🌐 CORS Configuration:");
+console.log("   Allowed Origins:", allowedOrigins);
+
+// CORS configuration
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? [
-            "https://smart-hrm-system.vercel.app",
-            "https://hrm-system-git-test-ec63dbf-mohamed-s-projects-62a99681.vercel.app",
-          ]
-        : "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, curl)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin is allowed
+      const isAllowed = allowedOrigins.some(allowedOrigin => {
+        if (allowedOrigin instanceof RegExp) {
+          return allowedOrigin.test(origin);
+        }
+        return allowedOrigin === origin;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        console.warn("⚠️  CORS blocked origin:", origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     optionsSuccessStatus: 200,
     allowedHeaders: [
@@ -55,20 +98,9 @@ app.use(
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
-
-// Add mobile-friendly headers for cross-origin cookies
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Origin", req.headers.origin);
-  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie"
-  );
-  next();
-});
 
 // const modelsPath = path.join(__dirname, "public", "models");
 // console.log("Models path resolved to:", modelsPath);
