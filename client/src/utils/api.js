@@ -1,5 +1,11 @@
 const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:10000";
 
+// Log the configured API base URL on first load (development only)
+if (import.meta.env.MODE === "development") {
+  console.log("🔗 API Base URL:", baseURL);
+  console.log("🌍 Mode:", import.meta.env.MODE);
+}
+
 const api = async (endpoint, method = "GET", body = null, headers = {}) => {
   // Check for mobile token fallback
   const mobileToken = localStorage.getItem("mobile_auth_token");
