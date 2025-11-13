@@ -3,6 +3,7 @@ const cloudinary = require("cloudinary").v2;
 const { db, collections, admin } = require("../config/firebase");
 const authMiddleware = require("../middleware/auth");
 const { Readable } = require("stream");
+const path = require("path"); // For path.basename() in download function
 
 // Helper function to validate Firebase document ID
 const isValidFirebaseId = (id) => {
@@ -12,6 +13,9 @@ const isValidFirebaseId = (id) => {
 // Helper function to upload PDF buffer to Cloudinary
 const uploadPDFToCloudinary = (buffer, filename) => {
   return new Promise((resolve, reject) => {
+    console.log("📤 Starting Cloudinary upload:", filename);
+    console.log("   Buffer size:", buffer.length, "bytes");
+    
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         resource_type: "raw",
@@ -21,8 +25,13 @@ const uploadPDFToCloudinary = (buffer, filename) => {
         overwrite: true,
       },
       (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
+        if (error) {
+          console.error("❌ Cloudinary upload error:", error.message);
+          reject(error);
+        } else {
+          console.log("✅ Cloudinary upload successful:", result.secure_url);
+          resolve(result);
+        }
       }
     );
 
@@ -31,6 +40,17 @@ const uploadPDFToCloudinary = (buffer, filename) => {
     readableStream.push(buffer);
     readableStream.push(null);
     readableStream.pipe(uploadStream);
+    
+    // Handle stream errors
+    readableStream.on('error', (error) => {
+      console.error("❌ Stream error:", error.message);
+      reject(error);
+    });
+    
+    uploadStream.on('error', (error) => {
+      console.error("❌ Upload stream error:", error.message);
+      reject(error);
+    });
   });
 };
 
@@ -65,6 +85,8 @@ const generateAttestation = async (req, res) => {
 
     const docName = `attestation-${employeeId}-${Date.now()}`;
 
+    console.log("📄 Generating PDF:", docName);
+
     // Create PDF in memory (no file system)
     const doc = new PDFDocument({
       size: "A4",
@@ -73,9 +95,12 @@ const generateAttestation = async (req, res) => {
 
     // Collect PDF data in memory
     const chunks = [];
-    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("data", (chunk) => {
+      chunks.push(chunk);
+      console.log("   Chunk received, size:", chunk.length);
+    });
     doc.on("end", () => {
-      // PDF generation complete
+      console.log("📄 PDF generation complete, total chunks:", chunks.length);
     });
 
     // Add logo as text (or skip logo for serverless compatibility)
@@ -144,11 +169,19 @@ const generateAttestation = async (req, res) => {
       doc.on("error", reject);
     });
 
+    console.log("📦 Combining chunks into buffer...");
     // Combine chunks into buffer
     const pdfBuffer = Buffer.concat(chunks);
+    console.log("📦 Buffer created, size:", pdfBuffer.length, "bytes");
+
+    if (pdfBuffer.length === 0) {
+      throw new Error("PDF buffer is empty - no data generated");
+    }
 
     // Upload buffer directly to Cloudinary (no file system)
+    console.log("☁️  Uploading attestation to Cloudinary...");
     const cloudinaryResult = await uploadPDFToCloudinary(pdfBuffer, docName);
+    console.log("✅ Attestation saved to Cloudinary:", cloudinaryResult.secure_url);
 
     // Save document to Firestore
     const documentData = {
@@ -197,6 +230,8 @@ const generatePaySlip = async (req, res) => {
 
     const docName = `payslip-${employeeId}-${month}-${year}-${Date.now()}`;
 
+    console.log("📄 Generating payslip PDF:", docName);
+
     // Create PDF in memory (no file system)
     const doc = new PDFDocument({
       size: "A4",
@@ -205,9 +240,12 @@ const generatePaySlip = async (req, res) => {
 
     // Collect PDF data in memory
     const chunks = [];
-    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("data", (chunk) => {
+      chunks.push(chunk);
+      console.log("   Chunk received, size:", chunk.length);
+    });
     doc.on("end", () => {
-      // PDF generation complete
+      console.log("📄 PDF generation complete, total chunks:", chunks.length);
     });
 
     // Add logo as text (or skip logo for serverless compatibility)
@@ -247,11 +285,19 @@ const generatePaySlip = async (req, res) => {
       doc.on("error", reject);
     });
 
+    console.log("📦 Combining chunks into buffer...");
     // Combine chunks into buffer
     const pdfBuffer = Buffer.concat(chunks);
+    console.log("📦 Buffer created, size:", pdfBuffer.length, "bytes");
+
+    if (pdfBuffer.length === 0) {
+      throw new Error("PDF buffer is empty - no data generated");
+    }
 
     // Upload buffer directly to Cloudinary (no file system)
+    console.log("☁️  Uploading payslip to Cloudinary...");
     const cloudinaryResult = await uploadPDFToCloudinary(pdfBuffer, docName);
+    console.log("✅ Payslip saved to Cloudinary:", cloudinaryResult.secure_url);
 
     // Save document to Firestore
     const documentData = {
@@ -302,10 +348,12 @@ const getDocuments = async (req, res) => {
       .where("employeeId", "==", employeeId)
       .get();
 
+    console.log("Documents found for employee:", documentsSnapshot.size);
+
     if (documentsSnapshot.empty) {
-      return res
-        .status(404)
-        .json({ message: "No documents found for this employee" });
+      console.log("No documents for this employee - returning empty array");
+      // Return empty array instead of 404 to allow graceful empty state
+      return res.status(200).json([]);
     }
 
     const documents = [];
@@ -332,6 +380,7 @@ const getDocuments = async (req, res) => {
       });
     }
 
+    console.log("Returning", documents.length, "documents for employee");
     res.status(200).json(documents);
   } catch (error) {
     console.error("Get documents error:", error.message);
@@ -348,8 +397,12 @@ const getAllAttestations = async (req, res) => {
       .where("type", "==", "attestation")
       .get();
 
+    console.log("Attestations found:", documentsSnapshot.size);
+
     if (documentsSnapshot.empty) {
-      return res.status(404).json({ message: "No attestations found" });
+      console.log("No attestations found - returning empty array");
+      // Return empty array instead of 404 to allow graceful empty state
+      return res.status(200).json([]);
     }
 
     const documents = [];
@@ -376,6 +429,7 @@ const getAllAttestations = async (req, res) => {
       });
     }
 
+    console.log("Returning", documents.length, "attestations");
     res.status(200).json(documents);
   } catch (error) {
     console.error("Get all attestations error:", error.message);
