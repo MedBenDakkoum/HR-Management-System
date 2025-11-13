@@ -70,18 +70,18 @@ app.use((req, res, next) => {
   next();
 });
 
-const modelsPath = path.join(__dirname, "public", "models");
-console.log("Models path resolved to:", modelsPath);
-if (!fs.existsSync(modelsPath)) {
-  console.error("Models directory does not exist at:", modelsPath);
-  // fs.mkdirSync(modelsPath, { recursive: true });
-  console.log("Created models directory at:", modelsPath);
-} else {
-  console.log("Checking permissions for:", modelsPath);
-  fs.accessSync(modelsPath, fs.constants.R_OK);
-  console.log("Models directory is readable, serving files...");
-  app.use("/models", express.static(modelsPath));
-}
+// const modelsPath = path.join(__dirname, "public", "models");
+// console.log("Models path resolved to:", modelsPath);
+// if (!fs.existsSync(modelsPath)) {
+//   console.error("Models directory does not exist at:", modelsPath);
+//   // fs.mkdirSync(modelsPath, { recursive: true });
+//   console.log("Created models directory at:", modelsPath);
+// } else {
+//   console.log("Checking permissions for:", modelsPath);
+//   fs.accessSync(modelsPath, fs.constants.R_OK);
+//   console.log("Models directory is readable, serving files...");
+//   app.use("/models", express.static(modelsPath));
+// }
 
 app.use("/api/employees", require("./routes/employees"));
 app.use("/api/attendance", require("./routes/attendance"));
