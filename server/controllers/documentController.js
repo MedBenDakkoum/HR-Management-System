@@ -1,13 +1,37 @@
-const fs = require("fs");
-const path = require("path");
 const PDFDocument = require("pdfkit");
 const cloudinary = require("cloudinary").v2;
 const { db, collections, admin } = require("../config/firebase");
 const authMiddleware = require("../middleware/auth");
+const { Readable } = require("stream");
 
 // Helper function to validate Firebase document ID
 const isValidFirebaseId = (id) => {
   return typeof id === "string" && id.length > 0;
+};
+
+// Helper function to upload PDF buffer to Cloudinary
+const uploadPDFToCloudinary = (buffer, filename) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        public_id: `flesk_generated_documents/${filename}`,
+        format: "pdf",
+        access_mode: "public",
+        overwrite: true,
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+
+    // Convert buffer to readable stream and pipe to Cloudinary
+    const readableStream = new Readable();
+    readableStream.push(buffer);
+    readableStream.push(null);
+    readableStream.pipe(uploadStream);
+  });
 };
 
 const generateAttestation = async (req, res) => {
@@ -40,34 +64,23 @@ const generateAttestation = async (req, res) => {
     const employee = { id: employeeDoc.id, ...employeeDoc.data() };
 
     const docName = `attestation-${employeeId}-${Date.now()}`;
-    const documentsDir = path
-      .resolve(__dirname, "../documents")
-      .replace(/\\/g, "/");
-    const pdfFile = path.join(documentsDir, `${docName}.pdf`);
 
-    fs.mkdirSync(documentsDir, { recursive: true });
-
+    // Create PDF in memory (no file system)
     const doc = new PDFDocument({
       size: "A4",
       margins: { top: 50, bottom: 50, left: 50, right: 50 },
     });
-    const stream = fs.createWriteStream(pdfFile);
 
-    doc.pipe(stream);
+    // Collect PDF data in memory
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      // PDF generation complete
+    });
 
-    const logoPath = path.join(__dirname, "../public/flesk-logo.png");
-    try {
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 50, { width: 100 });
-        doc.moveDown(2);
-      } else {
-        throw new Error("Local logo file not found");
-      }
-    } catch (imageError) {
-      console.error("Error adding logo to PDF:", imageError.message);
-      doc.fontSize(12).text("Logo not available", 50, 50, { align: "left" });
-      doc.moveDown(2);
-    }
+    // Add logo as text (or skip logo for serverless compatibility)
+    doc.fontSize(16).text("FLESK", 50, 50, { align: "left" });
+    doc.moveDown(2);
 
     doc
       .font("Times-Roman")
@@ -125,51 +138,42 @@ const generateAttestation = async (req, res) => {
 
     doc.end();
 
+    // Wait for PDF generation to complete
     await new Promise((resolve, reject) => {
-      stream.on("finish", resolve);
-      stream.on("error", reject);
+      doc.on("end", resolve);
+      doc.on("error", reject);
     });
 
-    if (!fs.existsSync(pdfFile)) {
-      throw new Error("PDF file was not generated");
-    }
+    // Combine chunks into buffer
+    const pdfBuffer = Buffer.concat(chunks);
 
-    try {
-      const cloudinaryResult = await cloudinary.uploader.upload(pdfFile, {
-        resource_type: "raw",
-        public_id: `flesk_generated_documents/${docName}`,
-        format: "pdf",
-        access_mode: "public",
-        overwrite: true,
-      });
+    // Upload buffer directly to Cloudinary (no file system)
+    const cloudinaryResult = await uploadPDFToCloudinary(pdfBuffer, docName);
 
-      if (fs.existsSync(pdfFile)) {
-        fs.unlinkSync(pdfFile);
-      }
+    // Save document to Firestore
+    const documentData = {
+      employeeId: employeeId,
+      type: "attestation",
+      fileUrl: cloudinaryResult.secure_url,
+      legalInfo: legalInfo || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
 
-      // Save document to Firestore
-      const documentData = {
-        employeeId: employeeId,
-        type: "attestation",
-        fileUrl: cloudinaryResult.secure_url,
-        legalInfo: legalInfo || null,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      };
+    const documentRef = await db()
+      .collection(collections.DOCUMENTS)
+      .add(documentData);
 
-      const documentRef = await db()
-        .collection(collections.DOCUMENTS)
-        .add(documentData);
+    const documentDoc = await documentRef.get();
+    const document = { 
+      id: documentDoc.id,
+      _id: documentDoc.id,
+      ...documentDoc.data(),
+      generatedDate: documentDoc.data().createdAt,
+    };
 
-      const documentDoc = await documentRef.get();
-      const document = { id: documentDoc.id, ...documentDoc.data() };
-
-      res
-        .status(201)
-        .json({ message: "Attestation generated successfully", document });
-    } catch (cloudinaryError) {
-      console.error("Cloudinary upload error:", cloudinaryError.message);
-      throw new Error(`Cloudinary upload failed: ${cloudinaryError.message}`);
-    }
+    res
+      .status(201)
+      .json({ message: "Attestation generated successfully", document });
   } catch (error) {
     console.error("Generate attestation error:", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -192,34 +196,23 @@ const generatePaySlip = async (req, res) => {
     const employee = { id: employeeDoc.id, ...employeeDoc.data() };
 
     const docName = `payslip-${employeeId}-${month}-${year}-${Date.now()}`;
-    const documentsDir = path
-      .resolve(__dirname, "../documents")
-      .replace(/\\/g, "/");
-    const pdfFile = path.join(documentsDir, `${docName}.pdf`);
 
-    fs.mkdirSync(documentsDir, { recursive: true });
-
+    // Create PDF in memory (no file system)
     const doc = new PDFDocument({
       size: "A4",
       margins: { top: 50, bottom: 50, left: 50, right: 50 },
     });
-    const stream = fs.createWriteStream(pdfFile);
 
-    doc.pipe(stream);
+    // Collect PDF data in memory
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      // PDF generation complete
+    });
 
-    const logoPath = path.join(__dirname, "../public/flesk-logo.png");
-    try {
-      if (fs.existsSync(logoPath)) {
-        doc.image(logoPath, 50, 50, { width: 100 });
-        doc.moveDown(2);
-      } else {
-        throw new Error("Local logo file not found");
-      }
-    } catch (imageError) {
-      console.error("Error adding logo to PDF:", imageError.message);
-      doc.fontSize(12).text("Logo not available", 50, 50, { align: "left" });
-      doc.moveDown(2);
-    }
+    // Add logo as text (or skip logo for serverless compatibility)
+    doc.fontSize(16).text("FLESK", 50, 50, { align: "left" });
+    doc.moveDown(2);
 
     doc
       .font("Times-Roman")
@@ -248,56 +241,47 @@ const generatePaySlip = async (req, res) => {
 
     doc.end();
 
+    // Wait for PDF generation to complete
     await new Promise((resolve, reject) => {
-      stream.on("finish", resolve);
-      stream.on("error", reject);
+      doc.on("end", resolve);
+      doc.on("error", reject);
     });
 
-    if (!fs.existsSync(pdfFile)) {
-      throw new Error("PDF file was not generated");
-    }
+    // Combine chunks into buffer
+    const pdfBuffer = Buffer.concat(chunks);
 
-    try {
-      const cloudinaryResult = await cloudinary.uploader.upload(pdfFile, {
-        resource_type: "raw",
-        public_id: `flesk_generated_documents/${docName}`,
-        format: "pdf",
-        access_mode: "public",
-        overwrite: true,
-      });
+    // Upload buffer directly to Cloudinary (no file system)
+    const cloudinaryResult = await uploadPDFToCloudinary(pdfBuffer, docName);
 
-      if (fs.existsSync(pdfFile)) {
-        fs.unlinkSync(pdfFile);
-      }
+    // Save document to Firestore
+    const documentData = {
+      employeeId: employeeId,
+      type: "payslip",
+      fileUrl: cloudinaryResult.secure_url,
+      month,
+      year,
+      salary,
+      deductions,
+      bonuses,
+      netPay: salary - deductions + bonuses,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
 
-      // Save document to Firestore
-      const documentData = {
-        employeeId: employeeId,
-        type: "payslip",
-        fileUrl: cloudinaryResult.secure_url,
-        month,
-        year,
-        salary,
-        deductions,
-        bonuses,
-        netPay: salary - deductions + bonuses,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      };
+    const documentRef = await db()
+      .collection(collections.DOCUMENTS)
+      .add(documentData);
 
-      const documentRef = await db()
-        .collection(collections.DOCUMENTS)
-        .add(documentData);
+    const documentDoc = await documentRef.get();
+    const document = { 
+      id: documentDoc.id,
+      _id: documentDoc.id,
+      ...documentDoc.data(),
+      generatedDate: documentDoc.data().createdAt,
+    };
 
-      const documentDoc = await documentRef.get();
-      const document = { id: documentDoc.id, ...documentDoc.data() };
-
-      res
-        .status(201)
-        .json({ message: "Pay slip generated successfully", document });
-    } catch (cloudinaryError) {
-      console.error("Cloudinary upload error:", cloudinaryError.message);
-      throw new Error(`Cloudinary upload failed: ${cloudinaryError.message}`);
-    }
+    res
+      .status(201)
+      .json({ message: "Pay slip generated successfully", document });
   } catch (error) {
     console.error("Generate pay slip error:", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
