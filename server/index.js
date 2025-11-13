@@ -1,6 +1,5 @@
 const express = require("express");
 const path = require("path");
-const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const cloudinary = require("cloudinary").v2;
@@ -93,11 +92,6 @@ app.use("/api/init", require("./routes/init"));
 app.get("/models/test", (req, res) => {
   res.send("Models folder is accessible");
 });
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("MongoDB connection error:", err));
 
 app.get("/", (req, res) => {
   res.send("FLESK Backend is running");
