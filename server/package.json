@@ -1,0 +1,36 @@
+{
+  "name": "flesk-backend",
+  "version": "1.0.0",
+  "description": "Backend for FLESK HR and Attendance Management",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "init-admin": "node scripts/init-admin.js",
+    "add-hire-dates": "node scripts/add-hire-dates.js"
+  },
+  "keywords": [],
+  "author": "Mohamed Ben Dakkoum",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "express-validator": "^7.2.1",
+    "firebase-admin": "^12.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.17.1",
+    "nodemailer": "^7.0.5",
+    "pdfkit": "^0.17.1",
+    "puppeteer-core": "^23.5.0",
+    "qrcode": "^1.5.4",
+    "winston": "^3.17.0"
+  }
+}

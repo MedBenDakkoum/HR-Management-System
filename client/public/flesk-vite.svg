@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="gradTop" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff9922"/>
+      <stop offset="100%" stop-color="#ff6a00"/>
+    </linearGradient>
+    <linearGradient id="gradMid" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff7a18"/>
+      <stop offset="100%" stop-color="#ea4b00"/>
+    </linearGradient>
+    <linearGradient id="gradBottom" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff8b22"/>
+      <stop offset="100%" stop-color="#ff5a00"/>
+    </linearGradient>
+    <!-- subtle darker overlay for the fold -->
+    <linearGradient id="fold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#db4b07" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#c63a05" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Top curved ribbon -->
+  <path d="M268 120
+           C268 120, 600 40, 840 120
+           L840 268
+           C600 200, 340 280, 268 420
+           Z"
+        fill="url(#gradTop)" />
+
+  <!-- Middle folded ribbon -->
+  <path d="M300 380
+           C420 340, 620 360, 820 420
+           L820 520
+           C620 480, 420 520, 300 600
+           Z"
+        fill="url(#gradMid)" />
+
+  <!-- Bottom large curved panel -->
+  <path d="M280 600
+           C440 480, 700 480, 820 520
+           L820 740
+           C680 700, 460 820, 280 980
+           Z"
+        fill="url(#gradBottom)" />
+
+  <!-- Fold shadow (thin shape to mimic inner fold) -->
+  <path d="M360 440
+           C500 400, 680 410, 760 450
+           L760 480
+           C680 460, 520 480, 360 560
+           Z"
+        fill="url(#fold)" opacity="0.95" />
+
+  <!-- small highlight for depth -->
+  <path d="M480 700
+           C560 650, 700 640, 760 660
+           L760 700
+           C700 690, 560 700, 480 760
+           Z"
+        fill="#ffb077" opacity="0.25" />
+
+</svg>
