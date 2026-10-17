@@ -1,12 +1,70 @@
-# React + Vite
+# HR Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern **Human Resources and Attendance Management System** developed for **FLESK Consulting** to streamline employee management and attendance tracking.
 
-Currently, two official plugins are available:
+The platform integrates facial recognition, QR code check-ins, GPS validation, and document generation to support efficient workforce management.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- **Attendance Management** — Track employee attendance and check-in/check-out activities.
+- **Facial Recognition** — Support identity verification for attendance tracking.
+- **QR Code Check-ins** — Simplify employee attendance registration.
+- **GPS Validation** — Support location-based attendance verification.
+- **Document Generation** — Generate documents required by HR workflows.
+- **Modern Web Interface** — Provide an accessible interface for HR operations.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Tech Stack
+
+- **Frontend:** React, Vite, JavaScript
+- **Backend:** MERN stack architecture
+- **Deployment:** Vercel, Docker-supported deployment
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js and npm
+- Git
+
+### Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/MedBenDakkoum/HR-Management-System.git
+cd HR-Management-System
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open the local URL displayed in your terminal to access the application.
+
+## Live Demo
+
+Explore the application:
+
+[HR Management System — Live Demo](https://hrm-system-frontend-theta.vercel.app/)
+
+## Project Repository
+
+[View source code on GitHub](https://github.com/MedBenDakkoum/HR-Management-System)
+
+## Author
+
+**Mohamed Ben Dakkoum**
+
+[GitHub Profile](https://github.com/MedBenDakkoum)
+
+---
+
+*Developed for FLESK Consulting to support modern HR operations and attendance management.*
